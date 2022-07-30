@@ -46,6 +46,9 @@ pub struct Contract {
 
     //keeps track of the metadata for the contract
     pub metadata: LazyOption<NFTContractMetadata>,
+
+    //keep track of the royalty percentages for all tokens in a hash map
+    pub royalty: HashMap<AccountId, u32>,
 }
 
 /// Helper structure for keys of the persistent collections.
@@ -69,7 +72,7 @@ impl Contract {
         user doesn't have to manually type metadata.
     */
     #[init]
-    pub fn new_default_meta(owner_id: AccountId) -> Self {
+    pub fn new_default_meta(owner_id: AccountId, perpetual_royalties: Option<HashMap<AccountId, u32>>) -> Self {
         //calls the other function "new: with some default metadata and the owner_id passed in 
         Self::new(
             owner_id,
@@ -82,6 +85,7 @@ impl Contract {
                 reference: None,
                 reference_hash: None,
             },
+            perpetual_royalties,
         )
     }
 
@@ -91,7 +95,21 @@ impl Contract {
         the owner_id. 
     */
     #[init]
-    pub fn new(owner_id: AccountId, metadata: NFTContractMetadata) -> Self {
+    pub fn new(owner_id: AccountId, metadata: NFTContractMetadata, perpetual_royalties: Option<HashMap<AccountId, u32>>) -> Self {
+        // create a royalty map to store in the token
+        let mut royalty = HashMap::new();
+
+        // if perpetual royalties were passed into the function: 
+        if let Some(perpetual_royalties) = perpetual_royalties {
+            //make sure that the length of the perpetual royalties is below 7 since we won't have enough GAS to pay out that many people
+            assert!(perpetual_royalties.len() < 7, "Cannot add more than 6 perpetual royalty amounts");
+
+            //iterate through the perpetual royalties and insert the account and amount in the royalty map
+            for (account, amount) in perpetual_royalties {
+                royalty.insert(account, amount);
+            }
+        }
+
         //create a variable of type Self with all the fields initialized. 
         let this = Self {
             //Storage keys are simply the prefixes used for the collections. This helps avoid data collision
@@ -106,6 +124,7 @@ impl Contract {
                 StorageKey::NFTContractMetadata.try_to_vec().unwrap(),
                 Some(&metadata),
             ),
+            royalty: royalty,
         };
 
         //return the Contract object

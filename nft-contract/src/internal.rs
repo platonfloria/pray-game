@@ -192,8 +192,6 @@ impl Contract {
             //reset the approval account IDs
             approved_account_ids: Default::default(),
             next_approval_id: token.next_approval_id,
-            //we copy over the royalties from the previous token
-            royalty: token.royalty.clone(),
         };
         //insert that new token into the tokens_by_id, replacing the old entry 
         self.tokens_by_id.insert(token_id, &new_token);

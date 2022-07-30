@@ -34,14 +34,12 @@ impl NonFungibleTokenCore for Contract {
         let mut payout_object = Payout {
             payout: HashMap::new()
         };
-        //get the royalty object from token
-		let royalty = token.royalty;
 
         //make sure we're not paying out to too many people (GAS limits this)
-		assert!(royalty.len() as u32 <= max_len_payout, "Market cannot payout to that many receivers");
+		assert!(self.royalty.len() as u32 <= max_len_payout, "Market cannot payout to that many receivers");
 
         //go through each key and value in the royalty object
-		for (k, v) in royalty.iter() {
+		for (k, v) in self.royalty.iter() {
             //get the key
 			let key = k.clone();
             //only insert into the payout if the key isn't the token owner (we add their payout at the end)
@@ -99,14 +97,12 @@ impl NonFungibleTokenCore for Contract {
         let mut payout_object = Payout {
             payout: HashMap::new()
         };
-        //get the royalty object from token
-		let royalty = previous_token.royalty;
 
         //make sure we're not paying out to too many people (GAS limits this)
-		assert!(royalty.len() as u32 <= max_len_payout, "Market cannot payout to that many receivers");
+		assert!(self.royalty.len() as u32 <= max_len_payout, "Market cannot payout to that many receivers");
 
         //go through each key and value in the royalty object
-		for (k, v) in royalty.iter() {
+		for (k, v) in self.royalty.iter() {
             //get the key
 			let key = k.clone();
             //only insert into the payout if the key isn't the token owner (we add their payout at the end)

@@ -8,25 +8,9 @@ impl Contract {
         token_id: TokenId,
         metadata: TokenMetadata,
         receiver_id: AccountId,
-        //we add an optional parameter for perpetual royalties
-        perpetual_royalties: Option<HashMap<AccountId, u32>>,
     ) {
         //measure the initial storage being used on the contract
         let initial_storage_usage = env::storage_usage();
-
-        // create a royalty map to store in the token
-        let mut royalty = HashMap::new();
-
-        // if perpetual royalties were passed into the function: 
-        if let Some(perpetual_royalties) = perpetual_royalties {
-            //make sure that the length of the perpetual royalties is below 7 since we won't have enough GAS to pay out that many people
-            assert!(perpetual_royalties.len() < 7, "Cannot add more than 6 perpetual royalty amounts");
-
-            //iterate through the perpetual royalties and insert the account and amount in the royalty map
-            for (account, amount) in perpetual_royalties {
-                royalty.insert(account, amount);
-            }
-        }
 
         //specify the token struct that contains the owner ID 
         let token = Token {
@@ -36,8 +20,6 @@ impl Contract {
             approved_account_ids: Default::default(),
             //the next approval ID is set to 0
             next_approval_id: 0,
-            //the map of perpetual royalties for the token (The owner will get 100% - total perpetual royalties)
-            royalty,
         };
 
         //insert the token ID and token struct and make sure that the token doesn't exist
