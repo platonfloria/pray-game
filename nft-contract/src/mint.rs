@@ -7,6 +7,7 @@ impl Contract {
         &mut self,
         receiver_id: AccountId,
     ) {
+        assert!(self.collection_state >= CollectionState::Published, "Minting is not allowed before the collection is published");
         assert!((self.tokens_by_id.len() as u32) < self.collection_size, "Entire collection was already minted");
 
         let token_id: TokenId = self.tokens_by_id.len().to_string();

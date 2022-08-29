@@ -53,6 +53,7 @@ pub struct Contract {
     pub royalty: HashMap<AccountId, u32>,
 
     pub collection_size: u32,
+    pub collection_state: CollectionState,
     pub encrypted_metadata: Vector<String>,
 }
 
@@ -68,6 +69,13 @@ pub enum StorageKey {
     TokensPerType,
     TokensPerTypeInner { token_type_hash: CryptoHash },
     TokenTypesLocked,
+}
+
+#[derive(Debug, PartialEq, PartialOrd, Serialize, Deserialize, BorshDeserialize, BorshSerialize)]
+pub enum CollectionState {
+    Deployed,
+    Published,
+    Revealed,
 }
 
 #[near_bindgen]
@@ -142,6 +150,7 @@ impl Contract {
             ),
             royalty: royalty,
             collection_size: collection_size,
+            collection_state: CollectionState::Deployed,
             encrypted_metadata: Vector::new(StorageKey::EncryptedMetadata.try_to_vec().unwrap()),
         };
 
@@ -149,8 +158,16 @@ impl Contract {
         this
     }
 
+    pub fn set_collection_state(&mut self, collection_state: CollectionState) {
+        self.assert_called_by_owner();
+        assert!(collection_state > self.collection_state, "Illegal state");
+
+        self.collection_state = collection_state;
+    }
+
     pub fn drop_state(&mut self) {
         self.assert_called_by_owner();
+        // assert!(self.collection_state < CollectionState::Published, "Can't drop the state of a published collection");
 
         self.tokens_by_id.clear();
         self.token_metadata_by_id.clear();

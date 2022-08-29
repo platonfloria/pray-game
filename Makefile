@@ -28,22 +28,28 @@ update: build
 		--accountId $(NFT_CONTRACT_ID)
 
 prepare_metadata:
-	(cd scripts; poetry run python prepare_metadata.py --dir=$(COLLECTION_DIR) --cid=$(COLLECTION_CID) --batch-size=1)
+	(cd scripts; poetry run python prepare_metadata.py --dir=$(COLLECTION_DIR) --cid=$(COLLECTION_CID) --batch-size=250)
 
 add_metadata: prepare_metadata
 	for file in $(shell ls scripts/output/$(COLLECTION_CID)) ; do \
-		encrypted_metadata=`cat scripts/output/$(COLLECTION_CID)/$$file`; \
+		encrypted_metadata=$$(cat scripts/output/$(COLLECTION_CID)/$$file); \
 		near call \
 			$(NFT_CONTRACT_ID) \
 			append_encrypted_metadata \
 			'{"encrypted_metadata": "'$$encrypted_metadata'"}' \
 			--accountId $(NFT_CONTRACT_ID) \
-			--amount 1 \
 			--gas=290000000000000; \
 	done
+	near call $(NFT_CONTRACT_ID) set_collection_state '{"collection_state": "Published"}' --accountId $(NFT_CONTRACT_ID)
 
 mint:
 	near call $(NFT_CONTRACT_ID) nft_mint '{"receiver_id": "'$(OWNER_CONTRACT_ID)'"}' --accountId $(NFT_CONTRACT_ID) --amount 0.1
 
 reveal:
-	near call $(NFT_CONTRACT_ID) reveal '{"password": "password"}' --accountId $(NFT_CONTRACT_ID) --amount 1 --gas=290000000000000
+	set -e; \
+	continue=true; \
+	while [ $$continue = true ]; do \
+		continue=$$(near call $(NFT_CONTRACT_ID) reveal '{"password": "password"}' --accountId $(NFT_CONTRACT_ID) --gas=290000000000000 | tail -1); \
+		echo $$continue; \
+	done
+	near call $(NFT_CONTRACT_ID) set_collection_state '{"collection_state": "Revealed"}' --accountId $(NFT_CONTRACT_ID)
