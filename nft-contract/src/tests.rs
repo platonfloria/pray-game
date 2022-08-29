@@ -2,6 +2,7 @@
 #[cfg(test)]
 use crate::aes_gcm_decrypt;
 use crate::Contract;
+use crate::CollectionState;
 use crate::TokenMetadata;
 use crate::approval::NonFungibleTokenCore;
 use near_sdk::json_types::{U128, U64};
@@ -60,6 +61,7 @@ fn test_mint_nft() {
     let mut context = get_context(accounts(0));
     testing_env!(context.build());
     let mut contract = Contract::new_default_meta(accounts(0).into(), 10, None);
+    contract.set_collection_state(CollectionState::Published);
     testing_env!(context
         .storage_usage(env::storage_usage())
         .attached_deposit(MINT_STORAGE_COST)
@@ -93,6 +95,7 @@ fn test_internal_transfer() {
     let mut context = get_context(accounts(0));
     testing_env!(context.build());
     let mut contract = Contract::new_default_meta(accounts(0).into(), 10, None);
+    contract.set_collection_state(CollectionState::Published);
 
     testing_env!(context
         .storage_usage(env::storage_usage())
@@ -145,6 +148,7 @@ fn test_nft_approve() {
     let mut context = get_context(accounts(0));
     testing_env!(context.build());
     let mut contract = Contract::new_default_meta(accounts(0).into(), 10, None);
+    contract.set_collection_state(CollectionState::Published);
 
     testing_env!(context
         .storage_usage(env::storage_usage())
@@ -175,6 +179,7 @@ fn test_nft_revoke() {
     let mut context = get_context(accounts(0));
     testing_env!(context.build());
     let mut contract = Contract::new_default_meta(accounts(0).into(), 10, None);
+    contract.set_collection_state(CollectionState::Published);
 
     testing_env!(context
         .storage_usage(env::storage_usage())
@@ -213,6 +218,7 @@ fn test_revoke_all() {
     let mut context = get_context(accounts(0));
     testing_env!(context.build());
     let mut contract = Contract::new_default_meta(accounts(0).into(), 10, None);
+    contract.set_collection_state(CollectionState::Published);
 
     testing_env!(context
         .storage_usage(env::storage_usage())
@@ -251,6 +257,7 @@ fn test_internal_remove_token_from_owner() {
     let mut context = get_context(accounts(0));
     testing_env!(context.build());
     let mut contract = Contract::new_default_meta(accounts(0).into(), 10, None);
+    contract.set_collection_state(CollectionState::Published);
 
     testing_env!(context
         .storage_usage(env::storage_usage())
@@ -274,6 +281,7 @@ fn test_nft_payout() {
     let mut context = get_context(accounts(0));
     testing_env!(context.build());
     let mut contract = Contract::new_default_meta(accounts(0).into(), 10, None);
+    contract.set_collection_state(CollectionState::Published);
 
     testing_env!(context
         .storage_usage(env::storage_usage())
@@ -301,6 +309,7 @@ fn test_nft_total_supply() {
     let mut context = get_context(accounts(0));
     testing_env!(context.build());
     let mut contract = Contract::new_default_meta(accounts(0).into(), 10, None);
+    contract.set_collection_state(CollectionState::Published);
 
     testing_env!(context
         .storage_usage(env::storage_usage())
@@ -332,8 +341,9 @@ fn test_release() {
         .attached_deposit(MINT_STORAGE_COST)
         .predecessor_account_id(accounts(0))
         .build());
-    contract.nft_mint(accounts(0));
     contract.append_encrypted_metadata("kz41tI8/G3wBD8gLKesW4sFS7NhVuzT5+hCInwrEB4F3L5o1rxExO2vftINXaXQPOAVEeU6ESuNTw7DsWZP+iE+K+gLvYJ8W/eYg/M5LZkJ3YNwi1yD8OA0jwAebMChlMdBPrLfHIAIc9Jq7bLl6zedQnDBaQW+HZHbF33kkEr8avqZSW10GCrLNjKtZ5bwM6nDZRg39NoNOJvUni9ALWaOcRDsbXyDSzeBBKB/kcegj+Nh/AwHPn7/bBwje8n0IULv+VKBeQpDhznAgO6YxiZbGuNfcmSGIeg7idhwd0F3e3zZw7zX+k0vSewehaFiHGTiq8L8dMP4/37Xi4FgSw1BJhfP5VFuFc0GtbHxwiPMux/LugAFErmFoypDSdBOYiwsqWVNanKERWWjqub+99h/KfcWKOzXf8rmQIRT5+Q32NW8TeRMIJ5Xpcvow/k5eZaES9Zy+O7Xm6NNR5Eq0IsqFfI/Yb6oUmX5c6vOvjSR6z+atnrjzfxbA88IdV/kUrDPX".to_string());
+    contract.set_collection_state(CollectionState::Published);
+    contract.nft_mint(accounts(0));
     contract.reveal("password".to_string());
     
     let contract_nft_tokens = contract.nft_tokens(Some(U128(0)), None);
