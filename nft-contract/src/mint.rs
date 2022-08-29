@@ -5,10 +5,12 @@ impl Contract {
     #[payable]
     pub fn nft_mint(
         &mut self,
-        token_id: TokenId,
-        metadata: TokenMetadata,
         receiver_id: AccountId,
     ) {
+        assert!((self.tokens_by_id.len() as u32) < self.collection_size, "Entire collection was already minted");
+
+        let token_id: TokenId = self.tokens_by_id.len().to_string();
+
         //measure the initial storage being used on the contract
         let initial_storage_usage = env::storage_usage();
 
@@ -27,9 +29,6 @@ impl Contract {
             self.tokens_by_id.insert(&token_id, &token).is_none(),
             "Token already exists"
         );
-
-        //insert the token ID and metadata
-        self.token_metadata_by_id.insert(&token_id, &metadata);
 
         //call the internal method for adding the token to the owner
         self.internal_add_token_to_owner(&token.owner_id, &token_id);

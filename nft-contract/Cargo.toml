@@ -8,7 +8,11 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+aes-gcm = "0.9.4"
+base64 = "0.13.0"
 near-sdk = "4.0.0"
+pbkdf2 = "0.11"
+serde = "1.0.141"
 serde_json = "1.0"
 
 [profile.release]

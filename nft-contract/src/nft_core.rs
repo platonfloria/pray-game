@@ -163,12 +163,30 @@ impl NonFungibleTokenCore for Contract {
         //if there is some token ID in the tokens_by_id collection
         if let Some(token) = self.tokens_by_id.get(&token_id) {
             //we'll get the metadata for that token
-            let metadata = self.token_metadata_by_id.get(&token_id).unwrap();
+            let metadata = if let Some(metadata) = self.token_metadata_by_id.get(&token_id) {
+                metadata
+            } else {
+                TokenMetadata {
+                    title: Some("Mistery".to_string()),
+                    description: Some("Placeholder Pray Character".to_string()),
+                    media: self.nft_metadata().base_uri,
+                    media_hash: None, // Option<Base64VecU8>, // Base64-encoded sha256 hash of content referenced by the `media` field. Required if `media` is included.
+                    copies: None, // Option<u64>, // number of copies of this set of metadata in existence when token was minted.
+                    issued_at: None, // Option<u64>, // When token was issued or minted, Unix epoch in milliseconds
+                    expires_at: None, // Option<u64>, // When token expires, Unix epoch in milliseconds
+                    starts_at: None, // Option<u64>, // When token starts being valid, Unix epoch in milliseconds
+                    updated_at: None, // Option<u64>, // When token was last updated, Unix epoch in milliseconds
+                    extra: None, // Option<String>, // anything extra the NFT wants to store on-chain. Can be stringified JSON.
+                    reference: None, // Option<String>, // URL to an off-chain JSON file with more info.
+                    reference_hash: None, // Option<Base64VecU8>, // Base64-encoded sha256 hash of JSON from reference field. Required if `reference` is included.
+                }
+            };
+
             //we return the JsonToken (wrapped by Some since we return an option)
             Some(JsonToken {
                 token_id,
                 owner_id: token.owner_id,
-                metadata,
+                metadata: metadata,
                 approved_account_ids: token.approved_account_ids,
             })
         } else { //if there wasn't a token ID in the tokens_by_id collection, we return None

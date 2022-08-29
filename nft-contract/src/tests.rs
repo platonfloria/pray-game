@@ -1,5 +1,6 @@
 /* unit tests */
 #[cfg(test)]
+use crate::aes_gcm_decrypt;
 use crate::Contract;
 use crate::TokenMetadata;
 use crate::approval::NonFungibleTokenCore;
@@ -19,22 +20,22 @@ fn get_context(predecessor: AccountId) -> VMContextBuilder {
     builder
 }
 
-fn sample_token_metadata() -> TokenMetadata {
-    TokenMetadata {
-        title: Some("Olympus Mons".into()),
-        description: Some("The tallest mountain in the charted solar system".into()),
-        media: None,
-        media_hash: None,
-        copies: Some(1u64),
-        issued_at: None,
-        expires_at: None,
-        starts_at: None,
-        updated_at: None,
-        extra: None,
-        reference: None,
-        reference_hash: None,
-    }
-}
+// fn sample_token_metadata() -> TokenMetadata {
+//     TokenMetadata {
+//         title: Some("Olympus Mons".into()),
+//         description: Some("The tallest mountain in the charted solar system".into()),
+//         media: None,
+//         media_hash: None,
+//         copies: Some(1u64),
+//         issued_at: None,
+//         expires_at: None,
+//         starts_at: None,
+//         updated_at: None,
+//         extra: None,
+//         reference: None,
+//         reference_hash: None,
+//     }
+// }
 
 #[test]
 #[should_panic(expected = "The contract is not initialized")]
@@ -48,7 +49,7 @@ fn test_default() {
 fn test_new_account_contract() {
     let mut context = get_context(accounts(1));
     testing_env!(context.build());
-    let contract = Contract::new_default_meta(accounts(1).into());
+    let contract = Contract::new_default_meta(accounts(1).into(), 10, None);
     testing_env!(context.is_view(true).build());
     let contract_nft_tokens = contract.nft_tokens(Some(U128(0)), None);
     assert_eq!(contract_nft_tokens.len(), 0);
@@ -58,32 +59,32 @@ fn test_new_account_contract() {
 fn test_mint_nft() {
     let mut context = get_context(accounts(0));
     testing_env!(context.build());
-    let mut contract = Contract::new_default_meta(accounts(0).into());
+    let mut contract = Contract::new_default_meta(accounts(0).into(), 10, None);
     testing_env!(context
         .storage_usage(env::storage_usage())
         .attached_deposit(MINT_STORAGE_COST)
         .predecessor_account_id(accounts(0))
         .build());
-    let token_metadata: TokenMetadata = sample_token_metadata();
+    // let token_metadata: TokenMetadata = sample_token_metadata();
     let token_id = "0".to_string();
-    contract.nft_mint(token_id.clone(), token_metadata, accounts(0), None);
+    contract.nft_mint(accounts(0));
     let contract_nft_tokens = contract.nft_tokens(Some(U128(0)), None);
     assert_eq!(contract_nft_tokens.len(), 1);
 
     assert_eq!(contract_nft_tokens[0].token_id, token_id);
     assert_eq!(contract_nft_tokens[0].owner_id, accounts(0));
-    assert_eq!(
-        contract_nft_tokens[0].metadata.title,
-        sample_token_metadata().title
-    );
-    assert_eq!(
-        contract_nft_tokens[0].metadata.description,
-        sample_token_metadata().description
-    );
-    assert_eq!(
-        contract_nft_tokens[0].metadata.media,
-        sample_token_metadata().media
-    );
+    // assert_eq!(
+    //     contract_nft_tokens[0].metadata.title,
+    //     sample_token_metadata().title
+    // );
+    // assert_eq!(
+    //     contract_nft_tokens[0].metadata.description,
+    //     sample_token_metadata().description
+    // );
+    // assert_eq!(
+    //     contract_nft_tokens[0].metadata.media,
+    //     sample_token_metadata().media
+    // );
     assert_eq!(contract_nft_tokens[0].approved_account_ids, HashMap::new());
 }
 
@@ -91,7 +92,7 @@ fn test_mint_nft() {
 fn test_internal_transfer() {
     let mut context = get_context(accounts(0));
     testing_env!(context.build());
-    let mut contract = Contract::new_default_meta(accounts(0).into());
+    let mut contract = Contract::new_default_meta(accounts(0).into(), 10, None);
 
     testing_env!(context
         .storage_usage(env::storage_usage())
@@ -99,7 +100,7 @@ fn test_internal_transfer() {
         .predecessor_account_id(accounts(0))
         .build());
     let token_id = "0".to_string();
-    contract.nft_mint(token_id.clone(), sample_token_metadata(), accounts(0), None);
+    contract.nft_mint(accounts(0));
 
     testing_env!(context
         .storage_usage(env::storage_usage())
@@ -130,12 +131,12 @@ fn test_internal_transfer() {
     let token = &tokens[0];
     assert_eq!(token.token_id, token_id);
     assert_eq!(token.owner_id, accounts(1));
-    assert_eq!(token.metadata.title, sample_token_metadata().title);
-    assert_eq!(
-        token.metadata.description,
-        sample_token_metadata().description
-    );
-    assert_eq!(token.metadata.media, sample_token_metadata().media);
+    // assert_eq!(token.metadata.title, sample_token_metadata().title);
+    // assert_eq!(
+    //     token.metadata.description,
+    //     sample_token_metadata().description
+    // );
+    // assert_eq!(token.metadata.media, sample_token_metadata().media);
     assert_eq!(token.approved_account_ids, HashMap::new());
 }
 
@@ -143,7 +144,7 @@ fn test_internal_transfer() {
 fn test_nft_approve() {
     let mut context = get_context(accounts(0));
     testing_env!(context.build());
-    let mut contract = Contract::new_default_meta(accounts(0).into());
+    let mut contract = Contract::new_default_meta(accounts(0).into(), 10, None);
 
     testing_env!(context
         .storage_usage(env::storage_usage())
@@ -151,7 +152,7 @@ fn test_nft_approve() {
         .predecessor_account_id(accounts(0))
         .build());
     let token_id = "0".to_string();
-    contract.nft_mint(token_id.clone(), sample_token_metadata(), accounts(0), None);
+    contract.nft_mint(accounts(0));
 
     testing_env!(context
         .storage_usage(env::storage_usage())
@@ -173,7 +174,7 @@ fn test_nft_approve() {
 fn test_nft_revoke() {
     let mut context = get_context(accounts(0));
     testing_env!(context.build());
-    let mut contract = Contract::new_default_meta(accounts(0).into());
+    let mut contract = Contract::new_default_meta(accounts(0).into(), 10, None);
 
     testing_env!(context
         .storage_usage(env::storage_usage())
@@ -181,7 +182,7 @@ fn test_nft_revoke() {
         .predecessor_account_id(accounts(0))
         .build());
     let token_id = "0".to_string();
-    contract.nft_mint(token_id.clone(), sample_token_metadata(), accounts(0), None);
+    contract.nft_mint(accounts(0));
 
     // alice approves bob
     testing_env!(context
@@ -211,7 +212,7 @@ fn test_nft_revoke() {
 fn test_revoke_all() {
     let mut context = get_context(accounts(0));
     testing_env!(context.build());
-    let mut contract = Contract::new_default_meta(accounts(0).into());
+    let mut contract = Contract::new_default_meta(accounts(0).into(), 10, None);
 
     testing_env!(context
         .storage_usage(env::storage_usage())
@@ -219,7 +220,7 @@ fn test_revoke_all() {
         .predecessor_account_id(accounts(0))
         .build());
     let token_id = "0".to_string();
-    contract.nft_mint(token_id.clone(), sample_token_metadata(), accounts(0), None);
+    contract.nft_mint(accounts(0));
 
     // alice approves bob
     testing_env!(context
@@ -249,7 +250,7 @@ fn test_revoke_all() {
 fn test_internal_remove_token_from_owner() {
     let mut context = get_context(accounts(0));
     testing_env!(context.build());
-    let mut contract = Contract::new_default_meta(accounts(0).into());
+    let mut contract = Contract::new_default_meta(accounts(0).into(), 10, None);
 
     testing_env!(context
         .storage_usage(env::storage_usage())
@@ -257,7 +258,7 @@ fn test_internal_remove_token_from_owner() {
         .predecessor_account_id(accounts(0))
         .build());
     let token_id = "0".to_string();
-    contract.nft_mint(token_id.clone(), sample_token_metadata(), accounts(0), None);
+    contract.nft_mint(accounts(0));
 
     let contract_nft_tokens_before = contract.nft_tokens_for_owner(accounts(0), None, None);
     assert_eq!(contract_nft_tokens_before.len(), 1);
@@ -272,7 +273,7 @@ fn test_nft_payout() {
     use crate::royalty::NonFungibleTokenCore;
     let mut context = get_context(accounts(0));
     testing_env!(context.build());
-    let mut contract = Contract::new_default_meta(accounts(0).into());
+    let mut contract = Contract::new_default_meta(accounts(0).into(), 10, None);
 
     testing_env!(context
         .storage_usage(env::storage_usage())
@@ -280,7 +281,7 @@ fn test_nft_payout() {
         .predecessor_account_id(accounts(0))
         .build());
     let token_id = "0".to_string();
-    contract.nft_mint(token_id.clone(), sample_token_metadata(), accounts(0), None);
+    contract.nft_mint(accounts(0));
 
     // alice approves bob
     testing_env!(context
@@ -299,16 +300,57 @@ fn test_nft_payout() {
 fn test_nft_total_supply() {
     let mut context = get_context(accounts(0));
     testing_env!(context.build());
-    let mut contract = Contract::new_default_meta(accounts(0).into());
+    let mut contract = Contract::new_default_meta(accounts(0).into(), 10, None);
 
     testing_env!(context
         .storage_usage(env::storage_usage())
         .attached_deposit(MINT_STORAGE_COST)
         .predecessor_account_id(accounts(0))
         .build());
-    let token_id = "0".to_string();
-    contract.nft_mint(token_id.clone(), sample_token_metadata(), accounts(0), None);
+    // let token_id = "0".to_string();
+    contract.nft_mint(accounts(0));
 
     let total_supply = contract.nft_total_supply();
     assert_eq!(total_supply, U128(1));
+}
+
+#[test]
+fn test_decryption() {
+    let password = "password";
+    let encrypted = "FCb4EnlNN28kxpoeH+QTwnUbtRtdvVnP2ZIwwlR6gJVimQKfWykw1J27rA8KxC7krOT3AOfva1h5SjZB7h+OFQ18afg=";
+    assert_eq!(aes_gcm_decrypt(password, encrypted), "this is some random text");
+}
+
+#[test]
+fn test_release() {
+    let mut context = get_context(accounts(0));
+    testing_env!(context.build());
+    let mut contract = Contract::new_default_meta(accounts(0).into(), 10, None);
+
+    testing_env!(context
+        .storage_usage(env::storage_usage())
+        .attached_deposit(MINT_STORAGE_COST)
+        .predecessor_account_id(accounts(0))
+        .build());
+    contract.nft_mint(accounts(0));
+    contract.append_encrypted_metadata("kz41tI8/G3wBD8gLKesW4sFS7NhVuzT5+hCInwrEB4F3L5o1rxExO2vftINXaXQPOAVEeU6ESuNTw7DsWZP+iE+K+gLvYJ8W/eYg/M5LZkJ3YNwi1yD8OA0jwAebMChlMdBPrLfHIAIc9Jq7bLl6zedQnDBaQW+HZHbF33kkEr8avqZSW10GCrLNjKtZ5bwM6nDZRg39NoNOJvUni9ALWaOcRDsbXyDSzeBBKB/kcegj+Nh/AwHPn7/bBwje8n0IULv+VKBeQpDhznAgO6YxiZbGuNfcmSGIeg7idhwd0F3e3zZw7zX+k0vSewehaFiHGTiq8L8dMP4/37Xi4FgSw1BJhfP5VFuFc0GtbHxwiPMux/LugAFErmFoypDSdBOYiwsqWVNanKERWWjqub+99h/KfcWKOzXf8rmQIRT5+Q32NW8TeRMIJ5Xpcvow/k5eZaES9Zy+O7Xm6NNR5Eq0IsqFfI/Yb6oUmX5c6vOvjSR6z+atnrjzfxbA88IdV/kUrDPX".to_string());
+    contract.reveal("password".to_string());
+    
+    let contract_nft_tokens = contract.nft_tokens(Some(U128(0)), None);
+    assert_eq!(contract_nft_tokens.len(), 1);
+
+    assert_eq!(contract_nft_tokens[0].token_id, "0");
+    assert_eq!(contract_nft_tokens[0].owner_id, accounts(0));
+    assert_eq!(
+        contract_nft_tokens[0].metadata.title,
+        Some("Villager 0".to_string())
+    );
+    assert_eq!(
+        contract_nft_tokens[0].metadata.description,
+        Some("Villager".to_string())
+    );
+    assert_eq!(
+        contract_nft_tokens[0].metadata.media,
+        Some("https://ipfs.io/ipfs/QmQskW3RWhbiYyebrgJTAA6BwkUcSuxbmAMKyVQbo27zRq/0.png".to_string())
+    );
 }

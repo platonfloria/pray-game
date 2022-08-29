@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{LazyOption, LookupMap, UnorderedMap, UnorderedSet};
+use near_sdk::collections::{LazyOption, LookupMap, UnorderedMap, UnorderedSet, Vector};
 use near_sdk::json_types::{Base64VecU8, U128};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
@@ -14,6 +14,7 @@ pub use crate::nft_core::*;
 pub use crate::approval::*;
 pub use crate::royalty::*;
 pub use crate::events::*;
+pub use crate::reveal::*;
 
 mod internal;
 mod approval; 
@@ -23,6 +24,7 @@ mod mint;
 mod nft_core; 
 mod royalty; 
 mod events;
+mod reveal;
 
 /// This spec can be treated like a version of the standard.
 pub const NFT_METADATA_SPEC: &str = "nft-1.0.0";
@@ -39,7 +41,7 @@ pub struct Contract {
     pub tokens_per_owner: LookupMap<AccountId, UnorderedSet<TokenId>>,
 
     //keeps track of the token struct for a given token ID
-    pub tokens_by_id: LookupMap<TokenId, Token>,
+    pub tokens_by_id: UnorderedMap<TokenId, Token>,
 
     //keeps track of the token metadata for a given token ID
     pub token_metadata_by_id: UnorderedMap<TokenId, TokenMetadata>,
@@ -49,6 +51,9 @@ pub struct Contract {
 
     //keep track of the royalty percentages for all tokens in a hash map
     pub royalty: HashMap<AccountId, u32>,
+
+    pub collection_size: u32,
+    pub encrypted_metadata: Vector<String>,
 }
 
 /// Helper structure for keys of the persistent collections.
@@ -59,6 +64,7 @@ pub enum StorageKey {
     TokensById,
     TokenMetadataById,
     NFTContractMetadata,
+    EncryptedMetadata,
     TokensPerType,
     TokensPerTypeInner { token_type_hash: CryptoHash },
     TokenTypesLocked,
@@ -72,20 +78,25 @@ impl Contract {
         user doesn't have to manually type metadata.
     */
     #[init]
-    pub fn new_default_meta(owner_id: AccountId, perpetual_royalties: Option<HashMap<AccountId, u32>>) -> Self {
+    pub fn new_default_meta(
+        owner_id: AccountId,
+        collection_size: u32,
+        perpetual_royalties: Option<HashMap<AccountId, u32>>
+    ) -> Self {
         //calls the other function "new: with some default metadata and the owner_id passed in 
         Self::new(
             owner_id,
             NFTContractMetadata {
                 spec: "nft-1.0.0".to_string(),
-                name: "NFT Tutorial Contract".to_string(),
-                symbol: "GOTEAM".to_string(),
+                name: "Pray".to_string(),
+                symbol: "PRAY".to_string(),
                 icon: None,
-                base_uri: None,
+                base_uri: Some("https://ipfs.io/ipfs/QmQkbuNeVoGhxsPNXpSx2mJyDHY3tL6T4Q3BemdtknQaKT".to_string()),
                 reference: None,
                 reference_hash: None,
             },
             perpetual_royalties,
+            collection_size,
         )
     }
 
@@ -95,7 +106,12 @@ impl Contract {
         the owner_id. 
     */
     #[init]
-    pub fn new(owner_id: AccountId, metadata: NFTContractMetadata, perpetual_royalties: Option<HashMap<AccountId, u32>>) -> Self {
+    pub fn new(
+        owner_id: AccountId,
+        metadata: NFTContractMetadata,
+        perpetual_royalties: Option<HashMap<AccountId, u32>>,
+        collection_size: u32
+    ) -> Self {
         // create a royalty map to store in the token
         let mut royalty = HashMap::new();
 
@@ -114,7 +130,7 @@ impl Contract {
         let this = Self {
             //Storage keys are simply the prefixes used for the collections. This helps avoid data collision
             tokens_per_owner: LookupMap::new(StorageKey::TokensPerOwner.try_to_vec().unwrap()),
-            tokens_by_id: LookupMap::new(StorageKey::TokensById.try_to_vec().unwrap()),
+            tokens_by_id: UnorderedMap::new(StorageKey::TokensById.try_to_vec().unwrap()),
             token_metadata_by_id: UnorderedMap::new(
                 StorageKey::TokenMetadataById.try_to_vec().unwrap(),
             ),
@@ -125,10 +141,20 @@ impl Contract {
                 Some(&metadata),
             ),
             royalty: royalty,
+            collection_size: collection_size,
+            encrypted_metadata: Vector::new(StorageKey::EncryptedMetadata.try_to_vec().unwrap()),
         };
 
         //return the Contract object
         this
+    }
+
+    pub fn drop_state(&mut self) {
+        self.assert_called_by_owner();
+
+        self.tokens_by_id.clear();
+        self.token_metadata_by_id.clear();
+        self.encrypted_metadata.clear();
     }
 }
 

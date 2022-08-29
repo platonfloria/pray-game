@@ -1,6 +1,21 @@
 use crate::*;
 use near_sdk::{CryptoHash};
+use std::str;
 use std::mem::size_of;
+use base64;
+use aes_gcm::{
+    aead::{generic_array::GenericArray, Aead, Payload},
+    NewAead,
+    Aes256Gcm,
+};
+use pbkdf2::{
+    password_hash::{
+        PasswordHasher, SaltString
+    },
+    Pbkdf2,
+    Algorithm,
+    Params,
+};
 
 //convert the royalty percentage and amount to pay into a payout (U128)
 pub(crate) fn royalty_to_payout(royalty_percentage: u32, amount_to_pay: Balance) -> U128 {
@@ -85,7 +100,41 @@ pub(crate) fn refund_deposit(storage_used: u64) {
     }
 }
 
+pub(crate) fn aes_gcm_decrypt(password: &str, encrypted: &str) -> String {
+    let encrypted_b64 = base64::decode(encrypted.as_bytes()).expect("failed to decode b64");
+
+    let salt = SaltString::b64_encode(&encrypted_b64[0..16]).unwrap();
+    let nonce = GenericArray::from_slice(&encrypted_b64[16..28]);
+    let ciphertext = &encrypted_b64[28..];
+
+    let password_hash = Pbkdf2.hash_password_customized(
+        password.as_bytes(),
+        Some(Algorithm::Pbkdf2Sha256.ident()),
+        None,
+        Params {
+            rounds: 1,
+            output_length: 32,
+        },
+        &salt
+    ).unwrap();
+    let cipher = Aes256Gcm::new(GenericArray::from_slice(&password_hash.hash.unwrap().as_bytes()));
+    let payload = Payload { msg: ciphertext, aad: b"", };
+    let plaintext = cipher.decrypt(nonce, payload).unwrap();
+    str::from_utf8(&plaintext).unwrap().to_string()
+}
+
 impl Contract {
+    pub(crate) fn assert_called_by_owner(&self) {
+        let sender_id = env::predecessor_account_id();
+
+        //make sure the sender ID is the contract owner. 
+        assert_eq!(
+            self.owner_id,
+            sender_id,
+            "owner_id should be sender_id"
+        );
+    }
+
     //add a token to the set of tokens an owner has
     pub(crate) fn internal_add_token_to_owner(
         &mut self,
