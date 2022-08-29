@@ -19,10 +19,11 @@ impl Contract {
         match self.encrypted_metadata.pop() {
             Some(cyphertext) => {
                 let plaintext = aes_gcm_decrypt(&password, &cyphertext);
-                let data: HashMap<TokenId, TokenMetadata> = serde_json::from_str(&plaintext).unwrap();
+                let mut data: HashMap<TokenId, TokenMetadata> = serde_json::from_str(&plaintext).unwrap();
 
-                for (token_id, metadata) in data.iter() {
+                for (token_id, metadata) in data.iter_mut() {
                     //insert the token ID and metadata
+                    metadata.copies = Some(1);
                     self.token_metadata_by_id.insert(&token_id, &metadata);
                 }
 

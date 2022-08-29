@@ -171,7 +171,7 @@ impl NonFungibleTokenCore for Contract {
                     description: Some("Placeholder Pray Character".to_string()),
                     media: self.nft_metadata().base_uri,
                     media_hash: None, // Option<Base64VecU8>, // Base64-encoded sha256 hash of content referenced by the `media` field. Required if `media` is included.
-                    copies: None, // Option<u64>, // number of copies of this set of metadata in existence when token was minted.
+                    copies: Some(1),
                     issued_at: None, // Option<u64>, // When token was issued or minted, Unix epoch in milliseconds
                     expires_at: None, // Option<u64>, // When token expires, Unix epoch in milliseconds
                     starts_at: None, // Option<u64>, // When token starts being valid, Unix epoch in milliseconds

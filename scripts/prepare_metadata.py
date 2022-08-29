@@ -57,7 +57,8 @@ def main(collection_dir, metadata_cid, batch_size):
                 'media': metadata['image'].replace('ipfs:/', 'https://ipfs.io/ipfs'),
                 'media_hash': sha256_hash(media_file.read()),
                 'reference': f'ipfs://{metadata_cid}/{j}',
-                'reference_hash': sha256_hash(contents)
+                'reference_hash': sha256_hash(contents),
+                'extra': json.dumps({'attributes': metadata['attributes']})
             }
         
         if batch_size is not None and len(data) == batch_size:
