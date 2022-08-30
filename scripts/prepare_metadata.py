@@ -38,10 +38,10 @@ def main(collection_dir, metadata_cid, batch_size):
     password = 'password'
     salt, key = get_key(password)
 
-    output_dir = f'output/{metadata_cid}'
+    output_dir = f'out/{metadata_cid}'
     if os.path.isdir(output_dir):
         shutil.rmtree(output_dir)
-    os.mkdir(output_dir)
+    os.makedirs(output_dir)
     token_ids = sorted(os.listdir(f'{collection_dir}/json'))
     batch_number = 0
     data = {}

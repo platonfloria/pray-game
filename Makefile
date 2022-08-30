@@ -5,7 +5,7 @@ COLLECTION_CID := QmQskW3RWhbiYyebrgJTAA6BwkUcSuxbmAMKyVQbo27zRq
 
 
 test:
-	(cd nft-contract; cargo test $(case))
+	(cd character-contract; cargo test $(case))
 
 build:
 	yarn build
@@ -17,22 +17,22 @@ reset:
 
 deploy: build
 	near deploy \
-		--wasmFile out/main.wasm \
+		--wasmFile out/character.wasm \
 		--accountId $(NFT_CONTRACT_ID) \
 		--initFunction "new_default_meta" \
 		--initArgs '{"owner_id": "'$(NFT_CONTRACT_ID)'", "collection_size": 1}'
 
 update: build
 	near deploy --force \
-		--wasmFile out/main.wasm \
+		--wasmFile out/character.wasm \
 		--accountId $(NFT_CONTRACT_ID)
 
 prepare_metadata:
 	(cd scripts; poetry run python prepare_metadata.py --dir=$(COLLECTION_DIR) --cid=$(COLLECTION_CID) --batch-size=250)
 
 add_metadata: prepare_metadata
-	for file in $(shell ls scripts/output/$(COLLECTION_CID)) ; do \
-		encrypted_metadata=$$(cat scripts/output/$(COLLECTION_CID)/$$file); \
+	for file in $(shell ls scripts/out/$(COLLECTION_CID)) ; do \
+		encrypted_metadata=$$(cat scripts/out/$(COLLECTION_CID)/$$file); \
 		near call \
 			$(NFT_CONTRACT_ID) \
 			append_encrypted_metadata \
