@@ -5,10 +5,13 @@
     "author": "Platon Floria",
     "license": "ISC",
     "scripts": {
-        "build": "cd character-contract && bash build.sh && cd .. ",
+        "build": "npm run build:character && npm run build:location",
+            "build:character": "cd character-contract && bash build.sh && cd ..",
+            "build:location": "cd location-contract && bash build.sh && cd ..",
         "test": "npm run test:unit && npm run test:integration",
-            "test:unit": "npm run test:unit:character",
+            "test:unit": "npm run test:unit:character && npm run test:unit:location",
                 "test:unit:character": "cd character-contract && cargo test -- --nocapture --color=always && cd ..",
+                "test:unit:location": "cd character-location && cargo test -- --nocapture --color=always && cd ..",
             "test:integration": "npm run test:integration:rs",
                 "test:integration:rs": "cd integration-tests/rs && cargo run --example integration-tests"
     }

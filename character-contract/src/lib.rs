@@ -15,16 +15,18 @@ pub use crate::approval::*;
 pub use crate::royalty::*;
 pub use crate::events::*;
 pub use crate::reveal::*;
+pub use crate::pray::location::*;
 
 mod internal;
-mod approval; 
-mod enumeration; 
-mod metadata; 
-mod mint; 
-mod nft_core; 
-mod royalty; 
+mod approval;
+mod enumeration;
+mod metadata;
+mod mint;
+mod nft_core;
+mod royalty;
 mod events;
 mod reveal;
+mod pray;
 
 /// This spec can be treated like a version of the standard.
 pub const NFT_METADATA_SPEC: &str = "nft-1.0.0";
