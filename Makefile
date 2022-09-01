@@ -10,6 +10,14 @@ test:
 build:
 	yarn build
 
+reproducible_build:
+	docker run \
+		--mount type=bind,source=`pwd`,target=/host \
+		--cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
+		-i -t nearprotocol/contract-builder \
+		bash -c " \
+			cd /host/character-contract && rustup target add wasm32-unknown-unknown && ./build.sh"
+
 reset:
 	near call $(NFT_CONTRACT_ID) drop_state '{}' --accountId $(NFT_CONTRACT_ID) --gas=290000000000000
 	near delete $(NFT_CONTRACT_ID) $(OWNER_CONTRACT_ID)
@@ -28,7 +36,7 @@ update: build
 		--accountId $(NFT_CONTRACT_ID)
 
 prepare_metadata:
-	(cd scripts; poetry run python prepare_metadata.py --dir=$(COLLECTION_DIR) --cid=$(COLLECTION_CID) --batch-size=250)
+	(cd scripts; poetry install; poetry run python prepare_metadata.py --dir=$(COLLECTION_DIR) --cid=$(COLLECTION_CID) --batch-size=250)
 
 add_metadata: prepare_metadata
 	for file in $(shell ls scripts/out/$(COLLECTION_CID)) ; do \
